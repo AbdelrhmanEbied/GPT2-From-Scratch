@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from dataclasses import dataclass
-import transformers 
+from transformers import GPT2LMHeadModel
 
 
 
@@ -26,7 +26,7 @@ def set_seed(seed: int = 8552):
 
 device=get_device()
 set_seed(8552)
-print(f"Current Device:{device}")
+
 
 
 # %%
@@ -35,9 +35,9 @@ class GPT_Config:
     block_size: int = 1024 # Max Sequence Length
     vocab_size: int = 50257 # number of tokens 50,000 BPE merges +256 bytes tokens + 1 Special Token (<[endoftext]>)
     # For more deteails https://arxiv.org/pdf/2603.02597
-    n_layer: int = 48   
-    n_head: int = 25    
-    n_embd: int = 1600   
+    n_layer: int = 12   
+    n_head: int = 12    
+    n_embd: int = 768   
 
 # %%
 class CausalSelfAttention(nn.Module):
@@ -49,7 +49,7 @@ class CausalSelfAttention(nn.Module):
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
         
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
-        self.c_proj.Gpt_2 = 1
+        self.c_proj.GPT_SCALE_INNIT = 1
         
         self.n_head = config.n_head
         self.n_embd = config.n_embd
@@ -85,6 +85,7 @@ class MLP(nn.Module):
         #For more Details Here is the link https://arxiv.org/pdf/1606.08415
         
         self.c_proj=  nn.Linear(4*config.n_embd,config.n_embd)
+        self.c_proj.GPT_SCALE_INNIT = 1
 
 
     def forward(self,x):
@@ -180,7 +181,7 @@ class GPT_2(nn.Module):
     def from_pretrained(cls, model_type):
         """Loads pretrained GPT-2 model weights from huggingface"""
         assert model_type in {'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'}
-        from transformers import GPT2LMHeadModel
+        
         print("loading weights from pretrained gpt: %s" % model_type)
 
         

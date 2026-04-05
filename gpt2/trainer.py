@@ -6,11 +6,11 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm.auto import tqdm
 from pathlib import Path
 from typing import Any, Callable, Optional, Dict, Protocol, runtime_checkable
-import math
 import inspect
 
 
-# ── Protocols ──────────────────────────────────────────────────────────────────
+
+
 
 @runtime_checkable
 class _Logger(Protocol):
@@ -485,9 +485,9 @@ def lm_loss(logits, targets):
 
 
 # ── Optimizer ────────────────────────────────────────────────────────────────
-def configure_optim(self, weight_decay, lr, device_type):
+def configure_optim(model, weight_decay, lr, device_type):
     
-    param_dict = {pn: p for pn, p in self.named_parameters() if p.requires_grad}
+    param_dict = {pn: p for pn, p in model.named_parameters() if p.requires_grad}
 
     
     decay_params = [p for n, p in param_dict.items() if p.dim() >= 2]
@@ -523,41 +523,60 @@ def configure_optim(self, weight_decay, lr, device_type):
 
 
 
+if __name__ == "__main__":
+    import argparse
+    import torch.optim.lr_scheduler as lr_scheduler
+    from model import GPT_2, GPT_Config, get_device
+    from Processed import train_dl, val_dl
 
-# ── Scheduler ────────────────────────────────────────────────────────────────
-device='cuda' if torch.cuda.is_available() else 'cpu'
-import torch.optim.lr_scheduler as lr_scheduler
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model",        type=str,   default="gpt2",
+                        choices=["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"])
+    parser.add_argument("--epochs",       type=int,   default=1)
+    parser.add_argument("--lr",           type=float, default=6e-4)
+    parser.add_argument("--weight_decay", type=float, default=0.1)
+    parser.add_argument("--grad_norm",    type=float, default=1.0)
+    parser.add_argument("--warmup_steps", type=int,   default=750)
+    parser.add_argument("--max_steps",    type=int,   default=18_000)
+    parser.add_argument("--amp",          action="store_true", default=True)
+    parser.add_argument("--checkpoint",   type=str,   default="checkpoints/best_model.pth")
+    parser.add_argument("--resume",       action="store_true")
+    parser.add_argument("--pretrained",   action="store_true")
+    args = parser.parse_args()
 
+    device  = get_device()
+    configs = {
+        "gpt2":        dict(n_layer=12, n_head=12, n_embd=768),
+        "gpt2-medium": dict(n_layer=24, n_head=16, n_embd=1024),
+        "gpt2-large":  dict(n_layer=36, n_head=20, n_embd=1280),
+        "gpt2-xl":     dict(n_layer=48, n_head=25, n_embd=1600),
+    }
 
-max_lr = 6e-4
-min_lr = max_lr * 0.1
-warmup_steps =750
-max_steps = 18000 #Note To calcualte this number you need to know how many data size do you have then divide it by your batch size
-#e.g you got a 9B tokens dataset(OpenWebText) and we are using 0.5M batch size so what u gonne do is 
-#divide your number of tokens by your batch size which in this case will be 9B/0.5M=18K Steps
+    if args.pretrained:
+        model = GPT_2.from_pretrained(args.model).to(device)
+        print(f"Loaded pretrained weights: {args.model}")
+    else:
+        model = GPT_2(GPT_Config(**configs[args.model])).to(device)
+        print(f"Training from scratch: {args.model}")
 
+    optimizer   = configure_optim(model, args.weight_decay, args.lr, device.type)
+    scheduler_1 = lr_scheduler.LinearLR(optimizer, start_factor=0.1, total_iters=args.warmup_steps)
+    scheduler_2 = lr_scheduler.CosineAnnealingLR(optimizer, T_max=(args.max_steps - args.warmup_steps), eta_min=args.lr * 0.1)
+    scheduler   = lr_scheduler.SequentialLR(optimizer, schedulers=[scheduler_1, scheduler_2], milestones=[args.warmup_steps])
 
-
-scheduler_1 = lr_scheduler.LinearLR(
-    configure_optim(6e-4,weight_decay=0.1,device_type=device.type), 
-    start_factor=0.1, 
-    total_iters=warmup_steps
-)
-
-
-scheduler_2 = lr_scheduler.CosineAnnealingLR(
-    configure_optim(6e-4,weight_decay=0.1,device_type=device.type), 
-    T_max=(max_steps - warmup_steps), 
-    eta_min=min_lr
-)
-
-
-scheduler = lr_scheduler.SequentialLR(
-    configure_optim(6e-4,weight_decay=0.1,device_type=device.type), 
-    schedulers=[scheduler_1, scheduler_2], 
-    milestones=[warmup_steps]
-)
-
-
-
+    results = trainer(
+        model                    = model,
+        train_dataloader         = train_dl,
+        test_dataloader          = val_dl,
+        loss_fn                  = lm_loss,
+        optimizer                = optimizer,
+        device                   = device,
+        epochs                   = args.epochs,
+        scheduler                = scheduler,
+        step_scheduler_per_batch = True,
+        use_amp                  = args.amp,
+        max_grad_norm            = args.grad_norm,
+        checkpoint_name          = args.checkpoint,
+        resume                   = args.resume,
+    )
 
