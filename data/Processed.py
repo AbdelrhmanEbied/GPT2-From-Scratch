@@ -8,7 +8,7 @@ import os
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 DATA_URL    = "Skylion007/openwebtext"
-SHARD_PATH  = "openwebtext_tokens.bin"   # written once, reused every run
+SHARD_PATH  = "openwebtext_tokens.bin"  
 T           = 1024                        
 BATCH_SIZE  = 128
 DTYPE       = np.uint16                  
