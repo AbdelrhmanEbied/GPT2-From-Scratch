@@ -1,7 +1,7 @@
 import torch
 import tiktoken
 import argparse
-from gpt2.model import GPT_2, device
+from model import GPT_2, device
 
 @torch.inference_mode()
 def generate(model, enc, prompt, max_new_tokens, temperature, top_k):
