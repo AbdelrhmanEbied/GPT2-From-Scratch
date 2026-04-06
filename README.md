@@ -3,15 +3,19 @@
 A full implementation of GPT-2 built from scratch in PyTorch, including a 
 production-grade training loop, data pipeline, and a dockerized REST API.
 
-## What's in this repo
+markdown## Repository structure
 
-GPT-2/
-├── architecture/
-│   ├── model.py        # GPT-2 architecture implemented from scratch
-│   ├── sampler.py      # Text generation / sampling script
-│   └── trainer.py      # Production training loop
-└── data/
-└── prepare.py      # Downloads, tokenizes and builds DataLoaders
+### `architecture/`
+| File | Description |
+|---|---|
+| `model.py` | GPT-2 architecture implemented from scratch |
+| `sampler.py` | Text generation and sampling script |
+| `trainer.py` | Production-grade training loop |
+
+### `data/`
+| File | Description |
+|---|---|
+| `prepare.py` | Downloads, tokenizes and builds DataLoaders |
 
 
 ---
