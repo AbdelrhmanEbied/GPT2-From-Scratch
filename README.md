@@ -3,7 +3,7 @@
 A full implementation of GPT-2 built from scratch in PyTorch, including a 
 production-grade training loop, data pipeline, and a dockerized REST API.
 
-markdown## Repository structure
+Repository structure
 
 ### `architecture/`
 | File | Description |
