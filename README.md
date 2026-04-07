@@ -73,36 +73,13 @@ The training loop in `trainer.py` includes:
 - WandB / custom logger integration
 - `torch.compile()` support
 
----
-
-## Run the API
-
-The pretrained API loads GPT-2 Medium weights into our custom architecture 
-and serves them via FastAPI.
-
-**Requirements**: Docker
-```bash
-docker pull abdelrhmanebied/gpt2-from-scratch
-docker run -p 8000:8000 abdelrhmanebied/gpt2-from-scratch
-```
-
-Then send a request:
-```bash
-curl -X POST http://localhost:8000/generate \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Once upon a time", "max_tokens": 100}'
-```
-
-Or visit `http://localhost:8000/docs` for the interactive Swagger UI.
-
----
 
 ## Train it yourself
 
 If you have access to a GPU cluster:
 ```bash
 # 1. Install dependencies
-pip install torch tiktoken datasets wandb
+pip install requirements.txt
 
 # 2. Download and tokenize OpenWebText
 python data/prepare.py --tokens 100_000_000
@@ -145,8 +122,8 @@ model = GPT_2.from_pretrained('gpt2-xl')      # 1.5B
 **Abdelrhman Ebied**
 
 This is my first transformer implementation and one of my earliest deep learning
-projects. I built it to combine everything I was learning at the same time —
-PyTorch, distributed training, FastAPI, and Docker — into one end-to-end pipeline.
+projects. I built it to combine everything I was learning at the same time 
+PyTorch, distributed training into one end to end project
 
 ### What I learned building this
 
@@ -171,8 +148,7 @@ PyTorch, distributed training, FastAPI, and Docker — into one end-to-end pipel
 - Building efficient DataLoaders with CUDA prefetching
 
 **Deployment**
-- Serving a PyTorch model via FastAPI
-- Containerizing a machine learning application with Docker
+I am currently expanding my skillset in model deployment. While I am still learning the ropes of FastAPI and Docker, my goal is to master these tools to bridge the gap between development and production. In my next project featuring Llama, I will apply these skills to build a full end-to-end pipeline integrated with a functional website
 
 ### Honest reflection
 
